@@ -355,8 +355,10 @@ export interface ModuleOptions {
     }
     /**
      * Optional PGP commit signing for GitHub publishes.
-     * When enabled, every commit produced by Studio will carry a detached PGP
-     * signature, making it appear as "Verified" on GitHub.
+     * When enabled, Studio tries to attach a detached PGP signature to each
+     * commit, making it appear as "Verified" on GitHub. If signing fails,
+     * publishing continues with an unsigned commit so editors are not blocked
+     * by server-side signing configuration issues.
      *
      * The key's user-id email **must** match a GitHub-verified email on the
      * committing account, otherwise GitHub will mark the commit as "Unverified"

@@ -219,7 +219,9 @@ export function createGitHubProvider(options: GitOptions): GitProviderAPI {
     // Commit date is fixed here so it matches the value in the signed commit object
     const commitDate = new Date().toISOString()
 
-    // Optionally obtain a PGP signature from the server-side signing endpoint
+    // Optionally obtain a PGP signature from the server-side signing endpoint.
+    // Signing is best-effort so a server-side signing misconfiguration does not
+    // block editors from publishing their pending draft changes.
     let signature: string | undefined
     if (signingEnabled) {
       try {
@@ -237,8 +239,7 @@ export function createGitHubProvider(options: GitOptions): GitProviderAPI {
         signature = signResponse.signature
       }
       catch (error) {
-        logger.error('Failed to sign commit:', error)
-        throw new Error('Commit signing failed. Check server logs and signing configuration.')
+        logger.warn('Failed to sign commit; publishing unsigned commit instead.', error)
       }
     }
 

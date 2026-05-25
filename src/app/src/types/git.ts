@@ -31,7 +31,8 @@ export interface GitOptions extends GitBaseOptions {
   instanceUrl?: string
   /**
    * When true, the GitHub provider will call `/__nuxt_studio/git/sign-commit`
-   * to obtain a PGP signature for each commit before submitting it.
+   * to try to obtain a PGP signature before submitting each commit.
+   * If signing fails, publishing continues with an unsigned commit.
    * Only applies to GitHub — no GitLab equivalent exists via REST API.
    * @default false
    */
