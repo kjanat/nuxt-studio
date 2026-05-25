@@ -30,6 +30,10 @@ export interface StudioHost {
       commit?: {
         messagePrefix?: string
       }
+      /**
+       * Whether to add the Nuxt Studio co-author trailer to commits.
+       * @default true
+       */
       coAuthorCredits?: boolean
     }
     ai: {
