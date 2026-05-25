@@ -15,7 +15,7 @@ const NUXT_STUDIO_COAUTHOR = 'Co-authored-by: Nuxt Studio <noreply@nuxt.studio>'
 const logger = consola.withTag('Nuxt Studio')
 
 export function createGitHubProvider(options: GitOptions): GitProviderAPI {
-  const { owner, repo, token, branch, rootDir, authorName, authorEmail } = options
+  const { owner, repo, token, branch, rootDir, authorName, authorEmail, coAuthorCredits = true } = options
   const gitFiles: Record<string, GitFile> = {}
 
   const instanceUrl = withoutTrailingSlash(options.instanceUrl || 'https://github.com')
@@ -131,7 +131,7 @@ export function createGitHubProvider(options: GitOptions): GitProviderAPI {
       .filter(file => file.status !== DraftStatus.Pristine)
       .map(file => ({ ...file, path: joinURL(rootDir, file.path) }))
 
-    const coAuthors: string[] = [NUXT_STUDIO_COAUTHOR]
+    const coAuthors: string[] = coAuthorCredits ? [NUXT_STUDIO_COAUTHOR] : []
 
     let commitAuthorName = authorName
     let commitAuthorEmail = authorEmail

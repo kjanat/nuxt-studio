@@ -30,6 +30,7 @@ export interface StudioHost {
       commit?: {
         messagePrefix?: string
       }
+      coAuthorCredits?: boolean
     }
     ai: {
       enabled: boolean

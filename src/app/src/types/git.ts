@@ -29,6 +29,11 @@ export interface GitOptions extends GitBaseOptions {
   rootDir: string
   token: string
   instanceUrl?: string
+  /**
+   * Whether to add the Nuxt Studio co-author trailer to commits.
+   * @default true
+   */
+  coAuthorCredits?: boolean
 }
 
 export interface CommitFilesOptions extends GitBaseOptions {

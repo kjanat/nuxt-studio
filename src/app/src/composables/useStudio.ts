@@ -33,6 +33,7 @@ export const useStudio = createSharedComposable(() => {
     authorName: host.user.get().name,
     authorEmail: host.user.get().email,
     instanceUrl: host.repository.instanceUrl,
+    coAuthorCredits: host.meta.git?.coAuthorCredits ?? true,
   }
 
   const gitProvider = useGitProvider(gitOptions, devMode.value)
