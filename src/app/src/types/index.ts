@@ -30,6 +30,9 @@ export interface StudioHost {
       commit?: {
         messagePrefix?: string
       }
+      signing?: {
+        enabled: boolean
+      }
     }
     ai: {
       enabled: boolean

@@ -15,7 +15,7 @@ const NUXT_STUDIO_COAUTHOR = 'Co-authored-by: Nuxt Studio <noreply@nuxt.studio>'
 const logger = consola.withTag('Nuxt Studio')
 
 export function createGitHubProvider(options: GitOptions): GitProviderAPI {
-  const { owner, repo, token, branch, rootDir, authorName, authorEmail } = options
+  const { owner, repo, token, branch, rootDir, authorName, authorEmail, signingEnabled = false } = options
   const gitFiles: Record<string, GitFile> = {}
 
   const instanceUrl = withoutTrailingSlash(options.instanceUrl || 'https://github.com')
@@ -216,19 +216,43 @@ export function createGitHubProvider(options: GitOptions): GitProviderAPI {
       }),
     })
 
-    // Create new commit
-    const newCommit = await $repositoryApi(`/git/commits`, {
-      method: 'POST',
-      body: JSON.stringify({
-        message,
-        tree: treeData.sha,
-        parents: [latestCommitSha],
-        author: {
+    // Commit date is fixed here so it matches the value in the signed commit object
+    const commitDate = new Date().toISOString()
+
+    // Optionally obtain a PGP signature from the server-side signing endpoint
+    let signature: string | undefined
+    if (signingEnabled) {
+      const signResponse = await ofetch<{ signature: string }>('/__nuxt_studio/git/sign-commit', {
+        method: 'POST',
+        body: {
+          tree: treeData.sha,
+          parent: latestCommitSha,
           name: authorName,
           email: authorEmail,
-          date: new Date().toISOString(),
+          date: commitDate,
+          message,
         },
-      }),
+      })
+      signature = signResponse.signature
+    }
+
+    // Create new commit
+    const commitBody: Record<string, unknown> = {
+      message,
+      tree: treeData.sha,
+      parents: [latestCommitSha],
+      author: {
+        name: authorName,
+        email: authorEmail,
+        date: commitDate,
+      },
+    }
+    if (signature !== undefined) {
+      commitBody.signature = signature
+    }
+    const newCommit = await $repositoryApi(`/git/commits`, {
+      method: 'POST',
+      body: JSON.stringify(commitBody),
     })
 
     // Update branch ref

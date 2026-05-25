@@ -29,6 +29,13 @@ export interface GitOptions extends GitBaseOptions {
   rootDir: string
   token: string
   instanceUrl?: string
+  /**
+   * When true, the GitHub provider will call `/__nuxt_studio/git/sign-commit`
+   * to obtain a PGP signature for each commit before submitting it.
+   * Only applies to GitHub — no GitLab equivalent exists via REST API.
+   * @default false
+   */
+  signingEnabled?: boolean
 }
 
 export interface CommitFilesOptions extends GitBaseOptions {
