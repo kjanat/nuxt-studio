@@ -37,7 +37,15 @@ export interface SignCommitBody {
  * what GitHub verifies the PGP signature against.
  */
 function buildCommitObject(body: SignCommitBody): string {
-  const unixTs = Math.floor(new Date(body.date).getTime() / 1000)
+  const dateMs = new Date(body.date).getTime()
+  if (Number.isNaN(dateMs)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid date format provided. Use an ISO 8601 date string.',
+    })
+  }
+
+  const unixTs = Math.floor(dateMs / 1000)
   const tzOffset = '+0000'
   const authorLine = `author ${body.name} <${body.email}> ${unixTs} ${tzOffset}`
   const committerLine = `committer ${body.name} <${body.email}> ${unixTs} ${tzOffset}`
@@ -84,23 +92,48 @@ export default eventHandler(async (event) => {
 
   const commitObject = buildCommitObject(body)
 
-  let privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored })
-
-  if (signingConfig.passphrase) {
-    privateKey = await openpgp.decryptKey({
-      privateKey,
-      passphrase: signingConfig.passphrase,
+  let privateKey: Awaited<ReturnType<typeof openpgp.readPrivateKey>>
+  try {
+    privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored })
+  }
+  catch {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to parse PGP private key. Ensure STUDIO_SIGNING_PRIVATE_KEY is a valid ASCII-armored key.',
     })
   }
 
-  const message = await openpgp.createMessage({ text: commitObject })
+  if (signingConfig.passphrase) {
+    try {
+      privateKey = await openpgp.decryptKey({
+        privateKey,
+        passphrase: signingConfig.passphrase,
+      })
+    }
+    catch {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to decrypt PGP private key. Check STUDIO_SIGNING_KEY_PASSPHRASE.',
+      })
+    }
+  }
 
-  const signature = await openpgp.sign({
-    message,
-    signingKeys: privateKey,
-    detached: true,
-    format: 'armored',
-  })
+  let signature: string
+  try {
+    const message = await openpgp.createMessage({ text: commitObject })
+    signature = await openpgp.sign({
+      message,
+      signingKeys: privateKey,
+      detached: true,
+      format: 'armored',
+    })
+  }
+  catch {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to sign commit object. The PGP key may be invalid or incompatible.',
+    })
+  }
 
   return { signature }
 })

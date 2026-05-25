@@ -222,18 +222,24 @@ export function createGitHubProvider(options: GitOptions): GitProviderAPI {
     // Optionally obtain a PGP signature from the server-side signing endpoint
     let signature: string | undefined
     if (signingEnabled) {
-      const signResponse = await ofetch<{ signature: string }>('/__nuxt_studio/git/sign-commit', {
-        method: 'POST',
-        body: {
-          tree: treeData.sha,
-          parent: latestCommitSha,
-          name: authorName,
-          email: authorEmail,
-          date: commitDate,
-          message,
-        },
-      })
-      signature = signResponse.signature
+      try {
+        const signResponse = await ofetch<{ signature: string }>('/__nuxt_studio/git/sign-commit', {
+          method: 'POST',
+          body: {
+            tree: treeData.sha,
+            parent: latestCommitSha,
+            name: authorName,
+            email: authorEmail,
+            date: commitDate,
+            message,
+          },
+        })
+        signature = signResponse.signature
+      }
+      catch (error) {
+        logger.error('Failed to sign commit:', error)
+        throw new Error('Commit signing failed. Check server logs and signing configuration.')
+      }
     }
 
     // Create new commit
