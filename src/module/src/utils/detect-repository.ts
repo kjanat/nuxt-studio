@@ -99,7 +99,7 @@ function parseGitUrl(input: string): ParsedGitUrl | null {
  *      Lets the user override anything platform CI vars would otherwise pick, without
  *      touching `nuxt.config.ts`. Useful e.g. when committing to a content repo that
  *      isn't the deployed app's own git origin.
- *   2. Vercel / Netlify / GitHub Actions / GitLab CI / Cloudflare Workers Builds /
+ *   2. Vercel / Netlify / GitHub Actions / GitLab CI / Cloudflare Workers /
  *      Cloudflare Pages — fill only fields the user vars left blank.
  */
 function detectFromEnv(): DetectedRepository | undefined {
@@ -244,7 +244,7 @@ function detectFromPackageJson(rootDir: string): DetectedRepository | undefined 
  *
  * Precedence (highest first; each source fills only fields the higher ones left blank):
  *   1. Environment variables (`STUDIO_REPO_*` first, then platform CI vars)
- *   2. Local git config (`git remote get-url origin` + `git symbolic-ref --short HEAD`)
+ *   2. Local git remote (`git remote get-url origin` + `git symbolic-ref --short HEAD`)
  *   3. `package.json#repository`
  *
  * User config in `nuxt.config.ts` is applied OUTSIDE this function via the existing
