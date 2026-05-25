@@ -157,9 +157,15 @@ function detectFromEnv(): DetectedRepository | undefined {
 		if (!out.instanceUrl && process.env.CI_SERVER_URL) out.instanceUrl = process.env.CI_SERVER_URL;
 	}
 
-	// Cloudflare Workers Builds / Pages — branch only (no provider/owner/repo exposed)
-	if (!out.branch && process.env.WORKERS_CI_BRANCH) out.branch = process.env.WORKERS_CI_BRANCH;
-	if (!out.branch && process.env.CF_PAGES_BRANCH) out.branch = process.env.CF_PAGES_BRANCH;
+	// Cloudflare Workers
+	if (!out.owner && process.env.WORKERS_CI && process.env.WORKERS_CI_BRANCH) {
+		if (!out.branch) out.branch = process.env.WORKERS_CI_BRANCH;
+	}
+
+	// Cloudflare Pages
+	if (!out.owner && process.env.CF_PAGES && process.env.CF_PAGES_BRANCH) {
+		if (!out.branch) out.branch = process.env.CF_PAGES_BRANCH;
+	}
 
 	return Object.keys(out).length ? out : undefined;
 }
