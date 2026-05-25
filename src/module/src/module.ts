@@ -9,6 +9,7 @@ import { validateAuthConfig } from './auth'
 import { setExternalMediaStorage, setDefaultMediaStorage } from './medias'
 import { setAIFeature } from './ai'
 import type { CommandConfig } from '../../app/src/types/editor'
+import { detectRepository } from './utils/detect-repository'
 
 const logger = useLogger('nuxt-studio')
 
@@ -463,7 +464,7 @@ export default defineNuxtModule<ModuleOptions>({
     // Fill in missing repository options from CI environment variables
     const isProdBuild = nuxt.options.dev === false && nuxt.options._prepare === false
     if (isProdBuild) {
-      const detectedRepo = detectRepositoryFromCI()
+      const detectedRepo = detectRepository(nuxt.options.rootDir)
       if (detectedRepo) {
         // Do not override provider with CI detection
         // For other fields CI detection values take precedence over user-configured values
@@ -702,56 +703,3 @@ export default defineNuxtModule<ModuleOptions>({
   },
 })
 
-/**
- * Fill in missing repository options from CI environment variables.
- * Supports Vercel, Netlify, GitHub Actions, and GitLab CI.
- */
-function detectRepositoryFromCI(): Partial<GitHubRepositoryOptions | GitLabRepositoryOptions> | undefined {
-  // Vercel
-  if (process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG && ['github', 'gitlab'].includes(process.env.VERCEL_GIT_PROVIDER!)) {
-    return {
-      provider: process.env.VERCEL_GIT_PROVIDER as 'github' | 'gitlab',
-      owner: process.env.VERCEL_GIT_REPO_OWNER,
-      repo: process.env.VERCEL_GIT_REPO_SLUG,
-      branch: process.env.VERCEL_GIT_COMMIT_REF,
-    }
-  }
-
-  // Netlify
-  if (process.env.NETLIFY && process.env.REPOSITORY_URL) {
-    const match = process.env.REPOSITORY_URL.match(/(?:github\.com|gitlab\.com)[:/]([^/]+)\/([^/.]+)/)
-    if (match?.[1] && match[2]) {
-      const isGitLab = process.env.REPOSITORY_URL.includes('gitlab.com')
-      return {
-        provider: isGitLab ? 'gitlab' : 'github',
-        owner: match[1],
-        repo: match[2],
-        branch: process.env.BRANCH,
-      }
-    }
-  }
-
-  // GitHub Actions
-  if (process.env.GITHUB_ACTIONS && process.env.GITHUB_REPOSITORY?.includes('/')) {
-    const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/') as [string, string]
-    return {
-      provider: 'github',
-      owner,
-      repo,
-      branch: process.env.GITHUB_REF_NAME,
-    }
-  }
-
-  // GitLab CI
-  if (process.env.GITLAB_CI && process.env.CI_PROJECT_NAMESPACE && process.env.CI_PROJECT_NAME) {
-    return {
-      provider: 'gitlab',
-      owner: process.env.CI_PROJECT_NAMESPACE,
-      repo: process.env.CI_PROJECT_NAME,
-      branch: process.env.CI_COMMIT_BRANCH,
-      instanceUrl: process.env.CI_SERVER_URL,
-    }
-  }
-
-  return undefined
-}
